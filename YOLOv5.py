@@ -4,6 +4,8 @@ import cv2
 import pafy #take videos from yt and pass to model
 from time import time
 
+
+#note: base code developed using: https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 class ObjectDetection:
     """
     Implements the YOLO V5 Model on a YT video using OpenCV 
@@ -40,9 +42,27 @@ class ObjectDetection:
         Loads YOLO V5 Model from PyTorch
         :return: Train model from PyTorch
         """
-
+        #you can also train your own model
         model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        #specity directory, additionally YOLO V5 small model specified (pretrained)
+        #if you specify custom, path for weights need to be provided
         return model
     
+    def score_frame(self, frame):
+        """
+        Takes a single frame as input, scores frame using the model
+        :param frame: Input frame in numpy/tuple/list format.
+        :return: Labels and Coordinates of obj detected by model in that frame
+        ::
+        """
+        #take a frame and do a forward pass
+        self.model.to(self.device) #setting device
+        frame = [frame]
+        results = self.model(frame) #for each frame the boundraies and labels will be stored
+
+        labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
+        #keeps coords of boundary boxes so they can be drawn later
+        return labels, cord
+
 
 
