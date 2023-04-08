@@ -61,8 +61,36 @@ class ObjectDetection:
         results = self.model(frame) #for each frame the boundraies and labels will be stored
 
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
-        #keeps coords of boundary boxes so they can be drawn later
+        #keeps labels/coords of boundary boxes so they can be drawn later
+        #take all val of first col, and last index in [:, -1]
         return labels, cord
+    
+    def class_to_label(self, x):
+        """
+        For given value of label, return string label
+        :param x: numeric label
+        :return: corresponding string label
+        :r type: string
+        """
+        return self.classes(int(x))
+    
+    def plot_boxes(self, results, frame):
+        """
+        Takes a given frame and results as input and then overlays bounding boxes and labels on the frame.
+        :param results: Contains labels and coords predicted by model on frame.
+        :param frame: Frame that has been scored.
+        :return: Frame with bounding boxes and labels overlayed on it
+        """
+        labels, cord = results
+        n = len(labels) #number of detected labels
+        x_shape, y_shape = frame.shape[1], frame.shape[0]
 
-
+        for i in range(n): #running through all the detections
+            row = cord[i]
+            if row[4]>=0.2:
+                x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
+                bgr = (0, 255, 0) #colour of boundary box, currently green
+                cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2) #draw rectangle around object
+                cv2.putText(frame, self.class_to_label(labels[i]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
+        return frame 
 
