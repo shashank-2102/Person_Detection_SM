@@ -72,7 +72,7 @@ class ObjectDetection:
         :return: corresponding string label
         :r type: string
         """
-        return self.classes(int(x))
+        return self.classes[int(x)]
     
     def plot_boxes(self, results, frame):
         """
@@ -94,3 +94,32 @@ class ObjectDetection:
                 cv2.putText(frame, self.class_to_label(labels[i]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
         return frame 
 
+    def __call__(self):
+        """
+        This function is called when the class is executed. Runs loop to read video frame by frame and outputs the result to a new file
+        :return: void
+        """
+
+        player = self.get_video_from_url()
+        assert player.isOpened()
+        x_shape = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
+        y_shape = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT)) #output resolution
+        four_cc =cv2.VideoWriter_fourcc(*"MJPG")
+        out = cv2.VideoWriter(self.out_file, four_cc, 20, (x_shape, y_shape))
+
+        while True: #as long as you have frames in video
+            start_time = time() #timer
+            ret, frame = player.read() #load frame from video
+            if not ret:
+                break
+            results = self.score_frame(frame) #get results
+            frame = self.plot_boxes(results, frame) #plot boxes
+            end_time = time()
+            fps = 1/np.round(end_time-start_time, 3) #calculate fps
+            print(f"FPS:{fps}")
+            out.write(frame)
+
+#create new obj and execute
+#give video url and output file name
+detection = ObjectDetection("https://www.youtube.com/watch?v=rtF_UiwPRYo", "video_t2.avi")
+detection()
