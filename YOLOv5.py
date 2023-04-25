@@ -43,7 +43,7 @@ class ObjectDetection:
         :return: Train model from PyTorch
         """
         #you can also train your own model
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
         #specity directory, additionally YOLO V5 small model specified (pretrained)
         #if you specify custom, path for weights need to be provided
         return model
@@ -105,7 +105,7 @@ class ObjectDetection:
         x_shape = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
         y_shape = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT)) #output resolution
         four_cc =cv2.VideoWriter_fourcc(*"MJPG")
-        out = cv2.VideoWriter(self.out_file, four_cc, 20, (x_shape, y_shape))
+        out = cv2.VideoWriter(self.out_file, four_cc, 30, (x_shape, y_shape))
 
         while True: #as long as you have frames in video
             start_time = time() #timer
@@ -114,6 +114,15 @@ class ObjectDetection:
                 break
             results = self.score_frame(frame) #get results
             frame = self.plot_boxes(results, frame) #plot boxes
+            
+            # Display the frame with bounding boxes and labels in real-time
+            cv2.imshow('Object Detection', frame)
+            cv2.waitKey(1)  # Wait for a key event (1 millisecond delay)
+
+            # Check for 'q' key press to exit the video processing
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
             end_time = time()
             fps = 1/np.round(end_time-start_time, 3) #calculate fps
             print(f"FPS:{fps}")
@@ -121,5 +130,5 @@ class ObjectDetection:
 
 #create new obj and execute
 #give video url and output file name
-detection = ObjectDetection("https://www.youtube.com/watch?v=rtF_UiwPRYo", "video_t2.avi")
+detection = ObjectDetection("https://www.youtube.com/watch?v=31kplxJn6nw", "video_t3.avi")
 detection()
