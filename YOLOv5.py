@@ -63,6 +63,9 @@ class ObjectDetection:
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
         #keeps labels/coords of boundary boxes so they can be drawn later
         #take all val of first col, and last index in [:, -1]
+
+    
+
         return labels, cord
     
     def class_to_label(self, x):
@@ -89,9 +92,12 @@ class ObjectDetection:
             row = cord[i]
             if row[4]>=0.2:
                 x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
-                bgr = (0, 255, 0) #colour of boundary box, currently green
+                bgr =  (0, 0, 255) #colour of boundary box, currently red
+                label = self.class_to_label(labels[i])
+                confidence = row[4]
+                text = f"{label}: {confidence:.2f}" #label and confidence text
                 cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2) #draw rectangle around object
-                cv2.putText(frame, self.class_to_label(labels[i]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
+                cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
         return frame 
 
     def __call__(self):
