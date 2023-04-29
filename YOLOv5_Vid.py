@@ -8,34 +8,45 @@ from time import time
 #note: base code developed using: https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 class ObjectDetection:
     """
-    Implements the YOLO V5 Model on a YT video using OpenCV 
+    Implements the YOLO V5 Model on a YT video, webcam or local file using OpenCV 
     """
 
-    def __init__(self, url, out_file):
+    def __init__(self, url, inp_typ, out_file):
         """
         Initialises the class with the YT Url and the Output File
-        :param url: A valid YT URL (prediction is made on this)
+        :param url: A valid YT URL OR Local file location
         :out_file: A valid output file name.
         :r type: None
         """
-        #initilising attributes 
-        self._URL = url 
+        #initilising attributes
+        self.input_t = inp_typ 
+        self._URL = url  #can be YT url or local file path
         self.model = self.load_model()
         self.classes = self.model.names
         self.out_file = out_file
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu' #checks if cuda is available and uses it if it is
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu :(' #checks if cuda is available and uses it if it is
         print("\n \nDevice Used (if its not cuda gl)", self.device)
-
 
     def get_video_from_url(self):
         """
         Generates video streaming object. Frame by frame extraction will be done in order to make predictions
         :return: openCV2 video capture object, with lowest quality frame available for video
         """
+        #distingish between local file and YT input
+        
+        if self.input_t == "Webcam":
+            return cv2.VideoCapture(0)
+        
+        elif self.input_t == "Local":
+            print("Loading local video file")
+            input_file = self._URL #test for mp4
 
-        play = pafy.new(self._URL).streams[-1]
-        assert play is not None #makes sure play is not none
-        return cv2.VideoCapture(play.url) #here you can also give camera input (verify)
+        elif self.input_t == "YT":
+            print("YT FILE")
+            play = pafy.new(self._URL).streams[-1]
+            input_file = play.url
+        return cv2.VideoCapture(input_file)
+        
     
     def load_model(self):
         """
@@ -95,7 +106,7 @@ class ObjectDetection:
                 bgr =  (0, 0, 255) #colour of boundary box, currently red
                 label = self.class_to_label(labels[i])
                 confidence = row[4]
-                text = f"{label}: {confidence:.2f}" #label and confidence text
+                text = f"{label}: {confidence:.2f}" #label and confidence text to be shown
                 cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2) #draw rectangle around object
                 cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
         return frame 
@@ -136,5 +147,8 @@ class ObjectDetection:
 
 #create new obj and execute
 #give video url and output file name
-detection = ObjectDetection("https://www.youtube.com/watch?v=31kplxJn6nw", "video_t3.avi")
+
+detection = ObjectDetection("Test_vid_london.mp4", "Local", "video_t7.avi") #if local leave url "."
+#choose between 'Local', 'Webcam' and 'YT' for input
+#either give URL or path for YT and Local respectively
 detection()
