@@ -1,5 +1,5 @@
 # Person_Detection_SM
- Person detection software for A.S.S. Smart Mobilty Track
+ Person detection software for A.S.S. Smart Mobilty Track, Honours Academy. Created by Shashank with foundations from https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 
 Uses YOLOv5 to dectect objects from input video. Supports Youtube videos, local files and webcam input. 
 
