@@ -15,6 +15,7 @@ class ObjectDetection:
         """
         Initialises the class with the YT Url and the Output File
         :param url: A valid YT URL OR Local file location
+        :paral inp_typ: User defined either 'Webcam', 'Local' or 'YT'
         :out_file: A valid output file name.
         :r type: None
         """
@@ -34,18 +35,42 @@ class ObjectDetection:
         """
         #distingish between local file and YT input
         
+        
         if self.input_t == "Webcam":
-            return cv2.VideoCapture(0)
+            print("Opening Webcam")
+            cap = cv2.VideoCapture(0)
+            # Set resolution of input frames to 640x480
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+            # Set frame rate of input frames to 30 frames per second
+            cap.set(cv2.CAP_PROP_FPS, 30)
+            return cap
         
         elif self.input_t == "Local":
             print("Loading local video file")
             input_file = self._URL #test for mp4
+            cap = cv2.VideoCapture(input_file)
+            # Set resolution of input frames to 640x480
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480) #doesnt seem to work yet, check
+
+            # Set frame rate of input rames to 30 frames per second
+            cap.set(cv2.CAP_PROP_FPS, 30)
+            return cap
 
         elif self.input_t == "YT":
-            print("YT FILE")
+            print("Loading YT Video")
             play = pafy.new(self._URL).streams[-1]
             input_file = play.url
-        return cv2.VideoCapture(input_file)
+            cap = cv2.VideoCapture(input_file)
+            # Set resolution of input frames to 640x480
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 5)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 5)
+
+            # Set frame rate of input frames to 30 frames per second
+            cap.set(cv2.CAP_PROP_FPS, 100)
+            return cap
         
     
     def load_model(self):
@@ -121,8 +146,8 @@ class ObjectDetection:
         assert player.isOpened()
         x_shape = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
         y_shape = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT)) #output resolution
-        four_cc =cv2.VideoWriter_fourcc(*"MJPG")
-        out = cv2.VideoWriter(self.out_file, four_cc, 30, (x_shape, y_shape))
+        four_cc = cv2.VideoWriter_fourcc(*"MJPG")
+        out = cv2.VideoWriter(self.out_file, four_cc, 60, (x_shape, y_shape))
 
         while True: #as long as you have frames in video
             start_time = time() #timer
@@ -143,12 +168,16 @@ class ObjectDetection:
             end_time = time()
             fps = 1/np.round(end_time-start_time, 3) #calculate fps
             print(f"FPS:{fps}")
+            print(x_shape, y_shape)
             out.write(frame)
+        # Release the video capture and close the window
+    cv2.destroyAllWindows()
 
 #create new obj and execute
 #give video url and output file name
 
-detection = ObjectDetection("Test_vid_london.mp4", "Local", "video_t7.avi") #if local leave url "."
+detection = ObjectDetection("C:\\Users\\shash\OneDrive - TU Eindhoven\\Shashank Lenovo\\Downloads\\photo_2021-04-09_06-50-38.jpg", "Local", "video_t7.avi")
 #choose between 'Local', 'Webcam' and 'YT' for input
 #either give URL or path for YT and Local respectively
 detection()
+
