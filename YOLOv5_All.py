@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import cv2
-import pafy #take videos from yt and pass to model
+#import pafy #take videos from yt and pass to model
 from time import time
 import rosbag
 import cv2
@@ -62,7 +62,13 @@ class ObjectDetection:
             cap.set(cv2.CAP_PROP_FPS, 30)
             return cap
 
-        elif self.input_t == "YT":
+        elif self.input_t == "Rosbag":
+            print("Loading Rosbag file")
+            
+            input_file = self._URL
+            return input_file
+        
+        """elif self.input_t == "YT":
             print("Loading YT Video")
             play = pafy.new(self._URL).streams[-1]
             input_file = play.url
@@ -73,13 +79,7 @@ class ObjectDetection:
 
             # Set frame rate of input frames to 30 frames per second
             cap.set(cv2.CAP_PROP_FPS, 100)
-            return cap
-        
-        elif self.input_t == "Rosbag":
-            print("Loading Rosbag file")
-            
-            input_file = self._URL
-            return input_file
+            return cap"""
         
 
     
@@ -215,7 +215,8 @@ class ObjectDetection:
 
 detection = ObjectDetection("/home/shashank/Downloads/outdoor_day1_data.bag", "Rosbag", "video_t7.avi")
 detection()
-#choose between 'Local', 'Webcam' and 'YT' for input
-#either give URL or path for YT and Local respectively
+#choose between 'Local', 'Webcam' for input
+#either give path for Local and Rosbag
+# YT functionality temporailrly removed 
 
 
