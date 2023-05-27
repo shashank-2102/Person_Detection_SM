@@ -3,9 +3,9 @@ import numpy as np
 import cv2
 #import pafy #take videos from yt and pass to model
 from time import time
-import rosbag
+#import rosbag
 import cv2
-from cv_bridge import CvBridge
+#from cv_bridge import CvBridge
 
 #note: base code developed using: https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 
@@ -28,8 +28,10 @@ class ObjectDetection:
         self.model = self.load_model()
         self.classes = self.model.names
         self.out_file = out_file
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu :(' #checks if cuda is available and uses it if it is
-        print("\n \nDevice Used (if its not cuda gl)", self.device)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu' #checks if cuda is available and uses it if it is
+        self.person_count = 0
+        self.vehicle_count = 0
+        print("\n \nDevice Used ", self.device, " (if its not cuda gl)")
 
     def get_video_from_url(self):
         """
@@ -121,30 +123,55 @@ class ObjectDetection:
         :return: corresponding string label
         :r type: string
         """
-        return self.classes[int(x)]
+        return self.classes[int(x)].lower()
     
     def plot_boxes(self, results, frame):
         """
         Takes a given frame and results as input and then overlays bounding boxes and labels on the frame.
-        :param results: Contains labels and coords predicted by model on frame.
+        :param results: Contains labels and coords predicted by the model on the frame.
         :param frame: Frame that has been scored.
-        :return: Frame with bounding boxes and labels overlayed on it
+        :return: Frame with bounding boxes and labels overlaid on it.
         """
         labels, cord = results
-        n = len(labels) #number of detected labels
+        n = len(labels)  # number of detected labels
         x_shape, y_shape = frame.shape[1], frame.shape[0]
 
-        for i in range(n): #running through all the detections
+        label_color_map = {
+            'truck': (0, 255, 0),      # Green color for 'truck' label
+            'car': (255, 0, 0),        # Blue color for 'car' label
+            'bus': (0, 0, 255),        # Red color for 'bus' label
+            'bike': (255, 255, 0),     # Cyan color for 'bike' label
+            'person': (0, 255, 255),   # Yellow color for 'person' label
+        } #other classes will be assigned at random
+
+        self.person_count = 0
+        self.vehicle_count = 0  # initialize counters
+
+        for i in range(n):  # running through all the detections
             row = cord[i]
-            if row[4]>=0.2:
-                x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
-                bgr =  (0, 0, 255) #colour of boundary box, currently red
+            if row[4] >= 0.2:
+                x1, y1, x2, y2 = int(row[0] * x_shape), int(row[1] * y_shape), int(row[2] * x_shape), int(row[3] * y_shape)
                 label = self.class_to_label(labels[i])
+                label_lower = label.lower()  # Convert label to lowercase
+                bgr = label_color_map.get(label_lower, (160, 160, 160))  # Get color based on lowercase label
                 confidence = row[4]
-                text = f"{label}: {confidence:.2f}" #label and confidence text to be shown
-                cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2) #draw rectangle around object
-                cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2) #displaying correspoding label
-        return frame 
+
+                # Increment counters based on detected labels
+                if label == 'person':
+                    self.person_count += 1
+                elif label in ('car', 'bus', 'truck', 'bike', 'motorcycle'):  # Check for multiple labels
+                    self.vehicle_count += 1
+
+                text = f"{label}: {confidence:.2f}"  # label and confidence text to be shown
+                cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)  # draw rectangle around object
+                cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)  # display corresponding label
+
+        count_text = f"People: {self.person_count}  Vehicle: {self.vehicle_count}"
+        cv2.putText(frame, count_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)  # display count text
+
+        return frame
+
+
 
     def __call__(self):
         """
@@ -206,14 +233,15 @@ class ObjectDetection:
             # Release the video capture and close the window
     
         cv2.destroyAllWindows()
-        bag.close()
+        if self.input_t=="Rosbag":
+            bag.close()
         out.release()
 
 
 #create new obj and execute
 #give video url and output file name
 
-detection = ObjectDetection("/home/shashank/Downloads/outdoor_day1_data.bag", "Rosbag", "video_t7.avi")
+detection = ObjectDetection("🇬🇧 England Beach Walk - Southend on Sea Beach 2022 _ UK Beach Heatwave.mp4", "Local", "video_t11.avi")
 detection()
 #choose between 'Local', 'Webcam' for input
 #either give path for Local and Rosbag
