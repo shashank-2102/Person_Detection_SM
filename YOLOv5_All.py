@@ -3,9 +3,9 @@ import numpy as np
 import cv2
 #import pafy #take videos from yt and pass to model
 from time import time
-#import rosbag
+import rosbag
 import cv2
-#from cv_bridge import CvBridge
+from cv_bridge import CvBridge
 
 #note: base code developed using: https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 
@@ -14,7 +14,7 @@ class ObjectDetection:
     Implements the YOLO V5 Model on a YT video, webcam or local file using OpenCV 
     """
 
-    def __init__(self, url, inp_typ, out_file):
+    def __init__(self, url, inp_typ, ros_topic, out_file):
         """
         Initialises the class with the YT Url and the Output File
         :param url: A valid YT URL OR Local file location
@@ -31,6 +31,7 @@ class ObjectDetection:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu' #checks if cuda is available and uses it if it is
         self.person_count = 0
         self.vehicle_count = 0
+        self.ros_topic = ros_topic
         print("\n \nDevice Used ", self.device, " (if its not cuda gl)")
 
     def get_video_from_url(self):
@@ -162,7 +163,7 @@ class ObjectDetection:
                 elif label in ('car', 'bus', 'truck', 'bike', 'motorcycle'):  # Check for multiple labels
                     self.vehicle_count += 1
 
-                text = f"{label}: {confidence:.2f}"  # label and confidence text to be shown
+                text = f"{'label'}: {confidence:.2f}"  # label and confidence text to be shown
                 cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)  # draw rectangle around object
                 cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)  # display corresponding label
 
@@ -189,21 +190,30 @@ class ObjectDetection:
             x_shape = int(player.get(cv2.CAP_PROP_FRAME_WIDTH))
             y_shape = int(player.get(cv2.CAP_PROP_FRAME_HEIGHT)) #output resolution
 
-        four_cc = cv2.VideoWriter_fourcc(*"MJPG")
+        four_cc = cv2.VideoWriter_fourcc(*"XVID")
         out = cv2.VideoWriter(self.out_file, four_cc, 30, (x_shape, y_shape))
 
         if self.input_t=="Rosbag":
-            for topic, msg, t in bag.read_messages(topics=['/davis/left/image_raw']):
+            for topic, msg, t in bag.read_messages(topics=[str(self.ros_topic)]):
+                start_time = time() #timer
                 cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-
                 results = self.score_frame(cv_image)
                 cv_image = self.plot_boxes(results, cv_image)
 
                 cv2.imshow('Object Detection', cv_image)
-                cv2.waitKey(1)
+
+                # Check for 'q' key press to exit the video processing
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+                
+                end_time = time()
+                fps = 1/np.round(end_time-start_time, 3) #calculate fps
+                print(f"FPS:{fps}")
+                print(x_shape, y_shape)
 
                 # Write the frame to the video file
                 out.write(cv_image)
+            bag.close()
 
         
 
@@ -233,17 +243,16 @@ class ObjectDetection:
             # Release the video capture and close the window
     
         cv2.destroyAllWindows()
-        if self.input_t=="Rosbag":
-            bag.close()
         out.release()
 
 
 #create new obj and execute
 #give video url and output file name
 
-detection = ObjectDetection("🇬🇧 England Beach Walk - Southend on Sea Beach 2022 _ UK Beach Heatwave.mp4", "Local", "video_t11.avi")
+detection = ObjectDetection("outdoor_day1_data.bag", "Webcam", '/davis/left/image_raw', "video_t100.avi")
 detection()
-#choose between 'Local', 'Webcam' for input
+#ObjectDetection("FILE LOCATION", "FILE TYPE", 'ROS TOPIC', "SAVE LOCATION and TYPE")
+#choose between 'Local', 'Webcam' and 'Rosbag' for input
 #either give path for Local and Rosbag
 # YT functionality temporailrly removed 
 
