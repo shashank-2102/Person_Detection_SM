@@ -3,9 +3,8 @@ import numpy as np
 import cv2
 #import pafy #take videos from yt and pass to model
 from time import time
-import rosbag
 import cv2
-from cv_bridge import CvBridge
+
 
 #note: base code developed using: https://www.youtube.com/watch?v=3wdqO_vYMpA&t=0s
 
@@ -66,12 +65,13 @@ class ObjectDetection:
             return cap
 
         elif self.input_t == "Rosbag":
+            from cv_bridge import CvBridge
+            import rosbag
             print("Loading Rosbag file")
-            
             input_file = self._URL
             return input_file
         
-        """elif self.input_t == "YT":
+        elif self.input_t == "YT":
             print("Loading YT Video")
             play = pafy.new(self._URL).streams[-1]
             input_file = play.url
@@ -82,7 +82,7 @@ class ObjectDetection:
 
             # Set frame rate of input frames to 30 frames per second
             cap.set(cv2.CAP_PROP_FPS, 100)
-            return cap"""
+            return cap
         
 
     
@@ -163,11 +163,11 @@ class ObjectDetection:
                 elif label in ('car', 'bus', 'truck', 'bike', 'motorcycle'):  # Check for multiple labels
                     self.vehicle_count += 1
 
-                text = f"{'label'}: {confidence:.2f}"  # label and confidence text to be shown
+                text = f"{label}: {confidence:.2f}"  # label and confidence text to be shown
                 cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)  # draw rectangle around object
                 cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)  # display corresponding label
 
-        count_text = f"People: {self.person_count}  Vehicle: {self.vehicle_count}"
+        count_text = f"Person: {self.person_count}  Vehicle: {self.vehicle_count}"
         cv2.putText(frame, count_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)  # display count text
 
         return frame
